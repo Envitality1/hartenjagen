@@ -53,17 +53,38 @@ app.get("/scores", async (req, res) => {
 
 app.post("/add", async (req, res) => {
   const { player, points } = req.body;
+
   try {
+    // Get current total
+    const result = await pool.query(
+      `SELECT COALESCE(SUM(points),0) AS total FROM scores WHERE player=$1`,
+      [player]
+    );
+    let currentTotal = result.rows[0].total;
+    let newPoints = points;
+
+    const potentialTotal = currentTotal + points;
+
+    // Apply the "bounce" rule
+    if (potentialTotal < 0) {
+      newPoints = -points - 2 * potentialTotal; 
+      // Explanation: currentTotal + newPoints = |currentTotal + points|
+    }
+
     await pool.query(
       `INSERT INTO scores (player, points) VALUES ($1, $2)`,
-      [player, points]
+      [player, newPoints]
     );
+
     res.send("OK");
   } catch (err) {
     console.error(err);
     res.status(500).send("Error adding score");
   }
 });
+
+
+
 
 // Serve index.html on root
 app.get("/", (req, res) => {
