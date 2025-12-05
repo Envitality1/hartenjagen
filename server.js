@@ -60,20 +60,21 @@ app.post("/add", async (req, res) => {
       `SELECT COALESCE(SUM(points),0) AS total FROM scores WHERE player=$1`,
       [player]
     );
-    let currentTotal = result.rows[0].total;
-    let newPoints = points;
+    const currentTotal = result.rows[0].total;
 
-    const potentialTotal = currentTotal + points;
-
-    // Apply the "bounce" rule
+    // Calculate new total with mirror rule
+    let potentialTotal = currentTotal + points;
     if (potentialTotal < 0) {
-      newPoints = -points - 2 * potentialTotal; 
-      // Explanation: currentTotal + newPoints = |currentTotal + points|
+      potentialTotal = Math.abs(potentialTotal);
     }
 
+    // Compute adjusted points to insert
+    const adjustedPoints = potentialTotal - currentTotal;
+
+    // Insert adjusted points
     await pool.query(
       `INSERT INTO scores (player, points) VALUES ($1, $2)`,
-      [player, newPoints]
+      [player, adjustedPoints]
     );
 
     res.send("OK");
@@ -82,6 +83,7 @@ app.post("/add", async (req, res) => {
     res.status(500).send("Error adding score");
   }
 });
+
 
 
 
