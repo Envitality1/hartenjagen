@@ -3,18 +3,34 @@
 <head>
   <title>Hartenjagen Scoreboard</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    table { border-collapse: collapse; margin-top: 20px; }
-    td, th { border: 1px solid black; padding: 10px; }
+    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
+    table { border-collapse: collapse; margin-top: 20px; width: 100%; }
+    td, th { border: 1px solid black; padding: 10px; text-align: center; }
+    input { width: 60px; }
+    button { margin-top: 10px; padding: 5px 15px; }
   </style>
 </head>
 <body>
   <h1>Hartenjagen Scoreboard</h1>
 
   <form id="scoreForm">
-    <input id="player" placeholder="Player name" required />
-    <input id="points" type="number" placeholder="Points" required />
-    <button type="submit">Add</button>
+    <table>
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Vince</td><td><input type="number" name="vince" required></td></tr>
+        <tr><td>Sam</td><td><input type="number" name="sam" required></td></tr>
+        <tr><td>Koen</td><td><input type="number" name="koen" required></td></tr>
+        <tr><td>Olivier</td><td><input type="number" name="olivier" required></td></tr>
+        <tr><td>Boaz</td><td><input type="number" name="boaz" required></td></tr>
+        <tr><td>Leon</td><td><input type="number" name="leon" required></td></tr>
+      </tbody>
+    </table>
+    <button type="submit">Add Scores</button>
   </form>
 
   <table>
@@ -37,13 +53,19 @@ async function loadScores() {
 
 document.getElementById("scoreForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const player = document.getElementById("player").value;
-  const points = document.getElementById("points").value;
-  await fetch("/add", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ player, points })
-  });
+  const form = e.target;
+  const formData = new FormData(form);
+
+  // Send a POST request for each player
+  for (const [player, points] of formData.entries()) {
+    await fetch("/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ player, points: parseInt(points) })
+    });
+  }
+
+  form.reset();
   loadScores();
 });
 
