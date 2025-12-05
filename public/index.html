@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hartenjagen Scoreboard</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    table { border-collapse: collapse; margin-top: 20px; }
+    td, th { border: 1px solid black; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Hartenjagen Scoreboard</h1>
+
+  <form id="scoreForm">
+    <input id="player" placeholder="Player name" required />
+    <input id="points" type="number" placeholder="Points" required />
+    <button type="submit">Add</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr><th>Player</th><th>Total Score</th></tr>
+    </thead>
+    <tbody id="scoreTable"></tbody>
+  </table>
+
+<script>
+async function loadScores() {
+  const res = await fetch("/scores");
+  const data = await res.json();
+  const table = document.getElementById("scoreTable");
+  table.innerHTML = "";
+  data.forEach(row => {
+    table.innerHTML += `<tr><td>${row.player}</td><td>${row.total}</td></tr>`;
+  });
+}
+
+document.getElementById("scoreForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const player = document.getElementById("player").value;
+  const points = document.getElementById("points").value;
+  await fetch("/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ player, points })
+  });
+  loadScores();
+});
+
+loadScores();
+</script>
+</body>
+</html>
