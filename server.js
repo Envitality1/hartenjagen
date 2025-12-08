@@ -7,27 +7,22 @@ import { fileURLToPath } from "url";
 
 const { Pool } = pkg;
 
-// Fix __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(bodyParser.json());
-
-// Serve static frontend
 app.use(express.static(path.join(__dirname, "public")));
 
-// Database setup
+const PLAYERS = ["vince", "sam", "koen", "olivier", "boaz", "leon"];
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-// Create table if it doesn't exist
-pool.query(`
+await pool.query(`
   CREATE TABLE IF NOT EXISTS scores (
     id SERIAL PRIMARY KEY,
     player VARCHAR(50),
@@ -35,7 +30,6 @@ pool.query(`
   )
 `);
 
-// API endpoints
 app.get("/scores", async (req, res) => {
   try {
     const result = await pool.query(`
@@ -51,50 +45,65 @@ app.get("/scores", async (req, res) => {
   }
 });
 
-app.post("/add", async (req, res) => {
-  const { player, points } = req.body;
-
+app.post("/add-round", async (req, res) => {
   try {
-    // Get current total
-    const result = await pool.query(
-      `SELECT COALESCE(SUM(points),0) AS total FROM scores WHERE player=$1`,
-      [player]
-    );
-    const currentTotal = result.rows[0].total;
+    const { scores } = req.body;
 
-    // Calculate new total with mirror rule
-    let potentialTotal = currentTotal + points;
-    if (potentialTotal < 0) {
-      potentialTotal = Math.abs(potentialTotal);
+    if (!scores) return res.status(400).send("Missing scores");
+
+    const client = await pool.connect();
+    await client.query("BEGIN");
+
+    // Fetch current totals
+    const totalsResult = await client.query(`
+      SELECT player, COALESCE(SUM(points),0) AS total 
+      FROM scores 
+      GROUP BY player
+    `);
+
+    const currentTotals = Object.fromEntries(
+      PLAYERS.map(p => [p, 0])
+    );
+
+    totalsResult.rows.forEach(row => {
+      currentTotals[row.player] = Number(row.total);
+    });
+
+    for (const player of PLAYERS) {
+      const addValue = Number(scores[player]);
+      if (!Number.isFinite(addValue)) continue;
+
+      const current = currentTotals[player];
+      let potential = current + addValue;
+
+      // Mirror rule
+      if (potential < 0) potential = Math.abs(potential);
+
+      const adjusted = potential - current;
+
+      if (adjusted !== 0) {
+        await client.query(
+          `INSERT INTO scores (player, points) VALUES ($1, $2)`,
+          [player, adjusted]
+        );
+
+        currentTotals[player] = potential;
+      }
     }
 
-    // Compute adjusted points to insert
-    const adjustedPoints = potentialTotal - currentTotal;
+    await client.query("COMMIT");
+    client.release();
 
-    // Insert adjusted points
-    await pool.query(
-      `INSERT INTO scores (player, points) VALUES ($1, $2)`,
-      [player, adjustedPoints]
-    );
+    res.json({ ok: true, newTotals: currentTotals });
 
-    res.send("OK");
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error adding score");
+    res.status(500).send("Error applying round");
   }
 });
 
-
-
-
-
-// Serve index.html on root
-app.get("/", (req, res) => {
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(process.env.PORT || 3000, () => console.log("Server running"));
