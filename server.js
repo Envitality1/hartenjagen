@@ -94,13 +94,42 @@ app.post("/add-round", async (req, res) => {
     await client.query("COMMIT");
     client.release();
 
-    res.json({ ok: true, newTotals: currentTotals });
+    await pool.query(`INSERT INTO rounds (data) VALUES ($1)`, [scores]);
+
+  res.json({ ok: true, newTotals: currentTotals });
 
   } catch (err) {
     console.error(err);
     res.status(500).send("Error applying round");
   }
 });
+
+
+// Create history table if not exists
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS rounds (
+    id SERIAL PRIMARY KEY,
+    created_at TIMESTAMP DEFAULT NOW(),
+    data JSONB
+  )
+`);
+
+app.get("/history", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT data, created_at 
+      FROM rounds 
+      ORDER BY id DESC 
+      LIMIT 10
+    `);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error fetching history");
+  }
+});
+
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));

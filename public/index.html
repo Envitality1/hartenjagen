@@ -1,75 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
-  <title>Hartenjagen Scoreboard</title>
-  <style>
-    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
-    table { border-collapse: collapse; margin-top: 20px; width: 100%; }
-    td, th { border: 1px solid black; padding: 10px; text-align: center; }
-    input { width: 60px; }
-    button { margin-top: 10px; padding: 5px 15px; }
-  </style>
+  <meta charset="UTF-8">
+  <title>Hartenjagen Scorebord</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Hartenjagen Scoreboard</h1>
 
-  <form id="scoreForm">
-    <table>
-      <thead>
-        <tr>
-          <th>Player</th>
-          <th>Points</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Vince</td><td><input type="number" name="vince" value="0" required></td></tr>
-        <tr><td>Sam</td><td><input type="number" name="sam" value="0" required></td></tr>
-        <tr><td>Koen</td><td><input type="number" name="koen" value="0" required></td></tr>
-        <tr><td>Olivier</td><td><input type="number" name="olivier" value="0" required></td></tr>
-        <tr><td>Boaz</td><td><input type="number" name="boaz" value="0" required></td></tr>
-        <tr><td>Leon</td><td><input type="number" name="leon" value="0" required></td></tr>
-      </tbody>
-    </table>
-    <button type="submit">Add Scores</button>
+  <h1>Hartenjagen Scorebord</h1>
+
+  <div id="scoreboard"></div>
+
+  <h2>Nieuwe Ronde</h2>
+  <form id="roundForm">
+    <div class="inputs">
+      <label>Vince <input type="number" id="vince" value="0"></label>
+      <label>Sam <input type="number" id="sam" value="0"></label>
+      <label>Koen <input type="number" id="koen" value="0"></label>
+      <label>Olivier <input type="number" id="olivier" value="0"></label>
+      <label>Boaz <input type="number" id="boaz" value="0"></label>
+      <label>Leon <input type="number" id="leon" value="0"></label>
+    </div>
+    <button type="submit">Ronde Opslaan</button>
   </form>
 
-  <table>
-    <thead>
-      <tr><th>Player</th><th>Total Score</th></tr>
-    </thead>
-    <tbody id="scoreTable"></tbody>
-  </table>
+  <h2>Laatste 10 Rondes</h2>
+  <div id="history"></div>
 
-<script>
-async function loadScores() {
-  const res = await fetch("/scores");
-  const data = await res.json();
-  const table = document.getElementById("scoreTable");
-  table.innerHTML = "";
-  data.forEach(row => {
-    table.innerHTML += `<tr><td>${row.player}</td><td>${row.total}</td></tr>`;
-  });
-}
-
-document.getElementById("scoreForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const form = e.target;
-  const formData = new FormData(form);
-
-  // Send a POST request for each player
-  for (const [player, points] of formData.entries()) {
-    await fetch("/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ player, points: parseInt(points) })
-    });
-  }
-
-  form.reset();
-  loadScores();
-});
-
-loadScores();
-</script>
+  <script src="script.js"></script>
 </body>
 </html>
