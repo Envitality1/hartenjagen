@@ -4,7 +4,7 @@ const PLAYER_LABELS = {
   vince: "Vince",
   sam: "Sam",
   koen: "Koen",
-  olivier: "Olivier + Tamir",
+  olivier: "Tamir + Olivier",
   boaz: "Boaz",
   leon: "Leon"
 };
