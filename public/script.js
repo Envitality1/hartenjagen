@@ -1,5 +1,14 @@
 const PLAYERS = ["vince", "sam", "koen", "olivier", "boaz", "leon"];
 
+const PLAYER_LABELS = {
+  vince: "Vince",
+  sam: "Sam",
+  koen: "Koen",
+  olivier: "Olivier + Tamir",
+  boaz: "Boaz",
+  leon: "Leon"
+};
+
 async function loadScores() {
   const res = await fetch("/scores");
   const data = await res.json();
@@ -7,7 +16,13 @@ async function loadScores() {
   document.getElementById("scoreboard").innerHTML = `
     <table>
       <tr><th>Speler</th><th>Totaal</th></tr>
-      ${data.map(r => `<tr><td>${r.player}</td><td>${r.total}</td></tr>`).join("")}
+      ${data.map(r => `
+        <tr>
+          <td>${PLAYER_LABELS[r.player] ?? r.player}</td>
+          <td>${r.total}</td>
+        </tr>
+`).join("")}
+
     </table>
   `;
 }
@@ -16,13 +31,29 @@ async function loadHistory() {
   const res = await fetch("/history");
   const data = await res.json();
 
-  document.getElementById("history").innerHTML = data.map((row, i) => `
-    <div class="round">
-      <strong>Ronde ${i + 1} (${new Date(row.created_at).toLocaleString()}):</strong>
-      <pre>${JSON.stringify(row.data, null, 2)}</pre>
-    </div>
-  `).join("");
+  document.getElementById("history").innerHTML = data.map((row, i) => {
+    const entries = Object.entries(row.data)
+      .filter(([, v]) => v !== 0)
+      .map(([player, points]) => `
+        <tr>
+          <td>${PLAYER_LABELS[player] ?? player}</td>
+          <td>${points > 0 ? "+" + points : points}</td>
+        </tr>
+      `).join("");
+
+    return `
+      <div class="round">
+        <strong>Ronde ${data.length - i}</strong>
+        <span class="time">${new Date(row.created_at).toLocaleString()}</span>
+        <table>
+          <tr><th>Speler</th><th>Punten</th></tr>
+          ${entries || `<tr><td colspan="2">Geen punten</td></tr>`}
+        </table>
+      </div>
+    `;
+  }).join("");
 }
+
 
 document.getElementById("roundForm").addEventListener("submit", async e => {
   e.preventDefault();
