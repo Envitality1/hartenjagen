@@ -131,6 +131,11 @@ app.get("/history", async (req, res) => {
 });
 
 
+app.get("/ping", (req, res) => {
+  res.status(200).send("pong");
+});
+
+
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });

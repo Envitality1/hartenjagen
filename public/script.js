@@ -78,3 +78,18 @@ document.getElementById("roundForm").addEventListener("submit", async e => {
 // Initial load
 loadScores();
 loadHistory();
+
+
+//TEAM NAMEN
+
+// Tamir + Olivier: Olimier
+
+//Alan + Leon: Lallan
+
+//Vince: Vince
+
+//Sam: Sam
+
+//Boax: Boaz
+
+//Koen: Koen
