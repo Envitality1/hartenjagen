@@ -5,10 +5,14 @@ import pkg from "pg";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import { addRoundToSheet } from "./googleSheets.js";
+
 const { Pool } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+
 
 const app = express();
 app.use(cors());
@@ -95,6 +99,7 @@ app.post("/add-round", async (req, res) => {
     client.release();
 
     await pool.query(`INSERT INTO rounds (data) VALUES ($1)`, [scores]);
+    await addRoundToSheet(scores);
 
   res.json({ ok: true, newTotals: currentTotals });
 
@@ -138,6 +143,6 @@ app.get("/ping", (req, res) => {
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+}); 
 
 app.listen(process.env.PORT || 3000, () => console.log("Server running"));
