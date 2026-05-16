@@ -99,7 +99,7 @@ app.post("/add-round", async (req, res) => {
     client.release();
 
     await pool.query(`INSERT INTO rounds (data) VALUES ($1)`, [scores]);
-    await addRoundToSheet(scores);
+    await addRoundToSheet(currentTotals);
 
   res.json({ ok: true, newTotals: currentTotals });
 
